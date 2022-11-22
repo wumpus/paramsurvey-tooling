@@ -52,7 +52,7 @@ which has nodes with 48 cores and 96 gigs of memory.
 
 #### head.batch
 
-'''
+```
 #!/bin/bash
 #SBATCH -n 48 # Number of cores requested
 #SBATCH -N 1 # Number of nodes requested
@@ -76,11 +76,11 @@ let "CPUS = $SLURM_JOB_CPUS_PER_NODE - 3"
 ray start --head --block --redis-port=$PORT --redis-password=$REDIS_PASSWORD --num-cpus=$CPUS
 
 echo ray head exiting
-'''
+```
 
 #### driver.batch
 
-'''
+```
 # copy the SBATCH lines from above
 
 . ~/configure-your-software-environment.sh
@@ -103,11 +103,11 @@ python ./my-program.py some args > STDOUT 2> STDERR
 
 #### scancel -u $USER
 
-'''
+```
 
 #### child.batch
 
-'''
+```
 # copy the SBATCH lines from above
 
 . ~/configure-your-software-environment.sh
@@ -118,7 +118,7 @@ REDIS_PASSWORD=$(cat ~/.ray-head-details  | cut -d ' ' -f 2)
 ray start --block --address=$ADDRESS --redis-password=$REDIS_PASSWORD --num-cpus=$SLURM_JOB_CPUS_PER_NODE
 
 echo ray child exiting
-'''
+```
 
 ### PBS Pro
 
