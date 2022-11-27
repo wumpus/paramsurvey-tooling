@@ -3,6 +3,7 @@ from unittest import mock
 from unittest.mock import patch
 import subprocess
 import os
+import sys
 
 from paramsurvey_tooling import cli
 
@@ -11,7 +12,6 @@ _save_subprocess_run = subprocess.run
 
 
 def test_starter(fs):
-    return
     subprocess.run = _save_subprocess_run
     home = os.path.expanduser('~')
     os.makedirs(home)
@@ -21,30 +21,27 @@ def test_starter(fs):
         cp.returncode = 0
         subprocess.run = mock.MagicMock(return_value=cp)
 
+        assert not os.path.isfile(os.path.expanduser('~/.ray-head-details'))
+
         args = 'start head'.split(' ')
         cli.main(args)
+
+        call_args = subprocess.run.call_args
+        assert call_args.args[0][:4] == ['ray', 'start', '--head', '--block']
         assert os.path.isfile(os.path.expanduser('~/.ray-head-details'))
-        call_args = subprocess.run.call_args()
-        assert call_args[:3] == ['ray', 'start', '--head', '--block']
         subprocess.run.reset_mock()
 
-        # driver
-        # should read the magic file
-        # should run the expected subprocess
         args = 'start driver foo.py a b c'.split(' ')
         cli.main(args)
-        call_args = subprocess.run.call_args()
-        assert call_args[:1] == ['ray', 'start']
-        assert call_args[4:8] == ['foo.py', 'a', 'b', 'c']
+        call_args = subprocess.run.call_args
+        # I'm not sure why it needs [0][0] at this point
+        assert call_args[0][0][:5] == ['python', 'foo.py', 'a', 'b', 'c']
         subprocess.run.reset_mock()
 
-        # child
-        # should read the magic file
-        # should run the expected subprocess
         args = 'start child'.split(' ')
         cli.main(args)
-        call_args = subprocess.run.call_args()
-        assert call_args[:3] == ['ray' 'start', '--block']
+        call_args = subprocess.run.call_args
+        assert call_args[0][0][:3] == ['ray', 'start', '--block']
 
 
 def test_submitter(fs):

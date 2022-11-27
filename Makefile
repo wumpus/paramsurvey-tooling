@@ -5,10 +5,10 @@ unit:
 	PYTHONPATH=. pytest tests/unit ${PYTEST_STDERR_VISIBLE}
 
 unit_coverage:
-	PYTHONPATH=. pytest --cov-append --cov-branch --cov paramsurvey_tooling -v -v tests/unit
+	PYTHONPATH=. pytest --cov-append --cov-branch --cov paramsurvey_tooling tests/unit
 
 unit_coverage_verbose:
-	PYTHONPATH=. pytest --cov-append --cov-branch --cov paramsurvey_tooling -v -v tests/unit
+	PYTHONPATH=. pytest --cov-append --cov-branch --cov paramsurvey_tooling -v -v tests/unit ${PYTEST_STDERR_VISIBLE}
 
 clean_coverage:
 	rm -f .coverage

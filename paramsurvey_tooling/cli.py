@@ -27,6 +27,7 @@ Univa Grid Engine appears to still use SGE_ as the prefix
 
 MAGIC_TIMEOUT_SEC = 300
 
+
 # XXX stolen from paramsurvey.psmultiprocessing
 def _core_count():
     try:
@@ -165,6 +166,7 @@ def proc_complain(proc, name):
 
 
 def starter(cmd, check_network=True):
+    print('starter: cmd is', cmd, file=sys.stderr)
     verbose = cmd.verbose
 
     batch = guess_batch(verbose=verbose)
@@ -186,7 +188,9 @@ def starter(cmd, check_network=True):
     elif cmd.verb == 'driver':
         address, password = await_magic_file(check_network=check_network)
         cmdline = 'ray start --address={} --redis-password={}'.format(address, password)
-        cmdline2 = ' '.join(cmd.words)
+        if cmd.words[0] == 'python':
+            cmd.words.pop(0)
+        cmdline2 = 'python ' + ' '.join(cmd.words)
         if cores:
             cores -= 1
     elif cmd.verb == 'child':
