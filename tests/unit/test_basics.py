@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import patch
 from unittest import mock
-
 import os
 import socket
+import sys
 
 from paramsurvey_tooling import cli
 
@@ -29,7 +29,7 @@ def test_guess_batch():
     d['SGE_2'] = '1'
     d['SGE_3'] = '1'
     with patch.dict(os.environ, d, clear=True):
-        assert cli.guess_batch() == 'SGE'
+        assert cli.guess_batch(verbose=2) == 'SGE'
 
 
 def test_create_magic_file(fs):
