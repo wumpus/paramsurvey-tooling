@@ -1,0 +1,4 @@
+.eggs
+build/
+paramsurvey_tooling.egg-info/
+__pycache__
