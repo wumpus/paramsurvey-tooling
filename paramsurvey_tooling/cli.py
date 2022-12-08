@@ -236,6 +236,7 @@ def starter(cmd, check_network=True):
 
 
 def submitter(cmd, check_network=True):
+    raise NotImplementedError('ray job submit is not working yet')
     verbose = cmd.verbose
     if cmd.sif:
         warnings.warn('Singularity support is untested.')
