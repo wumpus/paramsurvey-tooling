@@ -31,27 +31,27 @@ Instead of using a driver batch script, you can also run the driver on a head
 node:
 
 ```
-pstool submit ./my-script.py foo bar baz
+pstool submit ./my-script.py foo bar baz  # NOT YET WORKING
 ```
 
 ## Containers and paramsurvey
 
 Many compute clusters do not support Docker containers, for security reasons.
 These clusters often do support Singularity containers, and it's not hard to
-turn an arbitrary Docker container into a Singularity container. First export
-the Docker container on a machine that does have docker installed:
+turn an arbitrary Docker container into a Singularity container. Build
+the Docker container on a machine that does have docker installed, and
+then export it to a file:
 
 ```
 docker save IMAGE_ID | gzip > my_docker_image.tar.gz
 ```
 
-And bring that file to a host with `paramsurvey-tooling` installed, and do
+Transfer that file to a host with `paramsurvey-tooling` and `singularity`
+installed, and do:
 
 ```
 pstool build my_docker_image.tar.gz
 ```
-
-TODO: teach pstool how to actually start Singularity containers.
 
 ## Documentation
 

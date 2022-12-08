@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 import os
+import os.path
 import sys
 from collections import defaultdict
 import multiprocessing
@@ -9,6 +10,7 @@ import socket
 import time
 import subprocess
 import shlex
+import warnings
 
 import psutil
 
@@ -78,11 +80,11 @@ def get_resources(cmd, batch=None, verbose=False):
         # PBS_NUM_PPN -- not in the official docs
         # no mention of gpu in the official docs
         # there is an nVidia plugin that sets CUDA_VISIBLE_DEVICES
-        pass
+        warnings.warn('PBS support is untested')
     elif batch == 'SGE':
-        pass
+        warnings.warn('Grid Engine support is untested')
     else:
-        pass
+        raise ValueError('unknown type of batch system: '+repr(batch))
 
     # these override the numbers from the batch queue systems
     if cmd.num_cores:
@@ -101,16 +103,17 @@ def get_resources(cmd, batch=None, verbose=False):
 
 def get_working_dir(batch=None, verbose=False):
     if batch == 'SLURM':
-        return os.environ['SLURM_SUBMIT_DIR']
+        return os.environ.get('SLURM_SUBMIT_DIR')
     elif batch == 'PBS':
-        return os.environ['PBS_O_WORKDIR']
+        return os.environ.get('PBS_O_WORKDIR')
     elif batch == 'SGE':
-        return os.environ['SGE_O_WORKDIR']
+        return os.environ.get('SGE_O_WORKDIR')
     else:
         return None
 
 
 def create_magic_file():
+    print('GREG create_magic_file')
     magic = os.path.expanduser('~/.ray-head-details')
     hostname = socket.gethostname()
     password = hashlib.md5(str(random.random()).encode('utf-8')).hexdigest()[:8]
@@ -118,6 +121,11 @@ def create_magic_file():
     with os.fdopen(os.open(magic, flags=os.O_CREAT | os.O_WRONLY, mode=0o600), 'w') as fd:
         address = hostname+':'+str(port)
         print(address, password, file=fd)
+
+    # debug
+    print('GREG os.path.isfile', os.path.isfile(magic))
+    with open(magic) as f:
+        print('GREG content', f.read())
     return port, password
 
 
@@ -166,8 +174,9 @@ def proc_complain(proc, name):
 
 
 def starter(cmd, check_network=True):
-    print('starter: cmd is', cmd, file=sys.stderr)
     verbose = cmd.verbose
+    if cmd.sif:
+        warnings.warn('Singularity support is untested.')
 
     batch = guess_batch(verbose=verbose)
 
@@ -182,7 +191,7 @@ def starter(cmd, check_network=True):
     cmdline2 = None
     if cmd.verb == 'head':
         port, password = create_magic_file()
-        cmdline = 'ray start --head --block --redis-port={} --redis-password={}'.format(cores, password)
+        cmdline = 'ray start --head --block --port={} --redis-password={}'.format(port, password)
         if cores:
             cores -= 3
     elif cmd.verb == 'driver':
@@ -196,14 +205,20 @@ def starter(cmd, check_network=True):
     elif cmd.verb == 'child':
         address, password = await_magic_file(check_network=check_network)
         cmdline = 'ray start --block --address={} --redis-password={}'.format(address, password)
-    
+
     if cores and cores > 0:
         cmdline += ' --num-cpus={}'.format(cores)
     if gpus and gpus > 0:
         cmdline += ' --num-gpus={}'.format(gpus)
 
+    if cmd.sif:
+        cmdline = 'singularity exec {} '.format(cmd.sif) + cmdline
+
     parts = shlex.split(cmdline)
-    proc = subprocess.run(parts)
+    if verbose:
+        print('GREG parts is', parts)
+    # try/catch for FileNotFound ?
+    proc = subprocess.run(parts)  # XXX this is the hang in integration test -- ray start head
     proc_complain(proc, 'ray process')
 
     if not cmdline2:
@@ -211,6 +226,9 @@ def starter(cmd, check_network=True):
         return
 
     parts = shlex.split(cmdline2)
+    if verbose:
+        print(parts)
+    # try/catch for FileNotFound ?
     proc = subprocess.run(parts)
     proc_complain(proc, 'driver process')
 
@@ -219,25 +237,47 @@ def starter(cmd, check_network=True):
 
 def submitter(cmd, check_network=True):
     verbose = cmd.verbose
+    if cmd.sif:
+        warnings.warn('Singularity support is untested.')
 
     address, password = await_magic_file(check_network=check_network)
     host = address.split(':', 1)[0]
-    address = host + ':' + str(6379)
-    if verbose:
-        print('setting RAY_ADDRESS to', address)
-    os.environ['RAY_ADDRESS'] = address
+    #address = host + ':' + str(6379)
+    address = host + ':' + str(10001)
+
+    if cmd.no_wait:
+        no_wait = ' --no-wait'
+    else:
+        no_wait = ' '
 
     if cmd.words[0] == 'python':
         cmd.words.pop(0)
-    cmdline = 'ray job submit -- python ' + ' '.join(cmd.words)
+
+    cmdbase = 'ray job submit --address {}{}'.format(address, no_wait)
+    if cmd.sif:
+        cmdbase = 'singularity exec {} '.format(cmd.sif) + cmdbase
+    cmdline = cmdbase + ' -- python ' + ' '.join(cmd.words)
+
     parts = shlex.split(cmdline)
     try:
         proc = subprocess.run(parts)
     except FileNotFoundError:
-        print('FileNotFoundError: apparently ray is not installed on this system', file=sys.stderr)
+        if cmd.sif:
+            print('FileNotFoundError: apparently singularity is not installed on this system', file=sys.stderr)
+        else:
+            print('FileNotFoundError: apparently ray is not installed on this system', file=sys.stderr)
     else:
         proc_complain(proc, 'driver script')
 
+    if verbose:
+        if cmd.no_wait:
+            print('List of running jobs:')
+            cmdline = cmdbase + 'list'
+            subprocess.run(cmdline.split())
+            print('Job is hopefully running. Use these commands to interact with it:')
+            for verb in ('list', 'logs', 'status', 'stop'):
+                print(' ', cmdbase, verb)
+            
 
 def builder(cmd, check_network=False):
     verbose = cmd.verbose
@@ -272,11 +312,14 @@ def main(args=None, check_network=False):
     subparsers.required = True
 
     start = subparsers.add_parser('start', help='start head, child, or driver')
+    start.add_argument('--sif', action='store', help='name of a Singularity container. Implies use of Singularity')
     start.add_argument('verb', help='head, child, or driver')
     start.add_argument('words', nargs='*', help='the driver script and args to run')
     start.set_defaults(func=starter)
 
     submit = subparsers.add_parser('submit', help='run a driver script from outside the batch job')
+    submit.add_argument('--sif', action='store', help='name of a Singularity container. Implies use of Singularity')
+    submit.add_argument('--no-wait', action='store_true', help='start job and then exit, leaving the job running')
     submit.add_argument('words', nargs='+', help='the driver script and args to run')
     submit.set_defaults(func=submitter)
 

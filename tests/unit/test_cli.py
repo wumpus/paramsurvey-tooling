@@ -59,10 +59,11 @@ def test_submitter(fs):
     args = 'submit foo.py a b c'.split()
     cli.main(args)
 
-    assert 'RAY_ADDRESS' in os.environ
-    assert os.environ['RAY_ADDRESS'] == address2
     assert subprocess.run.called
-    args = ['ray', 'job', 'submit', '--', 'python', *args[1:]]
+    args = ['ray', 'job', 'submit', '--address', 'x', '--', 'python', *args[1:]]
+    # fish out the value of address in the call
+    address_value = subprocess.run.call_args.args[0][4]
+    args[4] = address_value
     subprocess.run.assert_called_with(args)
 
 
