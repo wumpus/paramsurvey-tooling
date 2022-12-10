@@ -14,7 +14,7 @@ requires = ['paramsurvey[ray]', 'psutil']
 
 test_requirements = ['pytest', 'pytest-cov', 'coveralls', 'pyfakefs']
 
-package_requirements = ['twine', 'setuptools', 'setuptools-scm']
+package_requirements = ['twine', 'setuptools', 'setuptools-scm[toml]']
 
 extras_require = {
     'test': test_requirements,
@@ -27,7 +27,6 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='paramsurvey_tooling',
-    use_scm_version=True,
     description='A toolkit to make paramsurvey easy to use on clusters and cloud',
     long_description=description,
     long_description_content_type='text/markdown',
@@ -37,7 +36,6 @@ setup(
     packages=packages,
     python_requires=">=3.6.*",
     extras_require=extras_require,
-    setup_requires=['setuptools-scm'],
     install_requires=requires,
     entry_points='''
         [console_scripts]
