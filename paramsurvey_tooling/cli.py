@@ -62,6 +62,7 @@ def print_environment(cmd, **kwargs):
         ('OS packages, arch', 'pacman -Q'),
         ('OS packages, flatpack', 'flatpack list --app'),
         ('OS packages, MacOS', 'pkgutil --pkgs'),
+        ('Conda packages', 'conda list -q'),
     ]
     for name, cmd in shell_stuff:
         print(name+':\n')
