@@ -41,6 +41,9 @@ def print_environment(cmd, **kwargs):
     print('Python sys.executable:\n')
     print(sys.executable)
     print('')
+    print('Python socket.gethostname:\n')
+    print(socket.gethostname())
+    print('')
 
     print('all python module versions:\n')
     for k in sorted(sys.modules):
@@ -50,6 +53,11 @@ def print_environment(cmd, **kwargs):
     print('')
 
     shell_stuff = [
+        ('hostname', 'hostname'),
+        ('hostname -d', 'hostname -d'),
+        ('hostname -A', 'hostname -A'),
+        ('hostname -I', 'hostname -I'),
+        ('/etc/hosts', 'cat /etc/hosts'),
         ('/etc/issue', 'cat /etc/issue'),
         ('singularity exe', 'which singularity'),
         ('singularity version', 'singularity --version'),
@@ -62,7 +70,9 @@ def print_environment(cmd, **kwargs):
         ('OS packages, arch', 'pacman -Q'),
         ('OS packages, flatpack', 'flatpack list --app'),
         ('OS packages, MacOS', 'pkgutil --pkgs'),
+        ('HPC Module', 'module list'),
         ('Conda packages', 'conda list -q'),
+        ('pip freeze', 'pip freeze'),
     ]
     for name, cmd in shell_stuff:
         print(name+':\n')
