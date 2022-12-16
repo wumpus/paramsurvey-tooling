@@ -30,6 +30,54 @@ Univa Grid Engine appears to still use SGE_ as the prefix
 MAGIC_TIMEOUT_SEC = 300
 
 
+def print_environment(cmd, **kwargs):
+    '''Print environmental information useful for filing bug reports'''
+    print('Shell environment:\n')
+    print('\n'.join('{}={}'.format(k, v) for k, v in os.environ.items()))
+    print('')
+    print('Python sys.implementation:\n')
+    print(sys.implementation)
+    print('')
+    print('Python sys.executable:\n')
+    print(sys.executable)
+    print('')
+
+    print('all python module versions:\n')
+    for k in sorted(sys.modules):
+        v = sys.modules[k]
+        ver = getattr(v, '__version__', None) or getattr(v, 'version', 'unknown')
+        print(' ', k, ver)
+    print('')
+
+    shell_stuff = [
+        ('/etc/issue', 'cat /etc/issue'),
+        ('singularity exe', 'which singularity'),
+        ('singularity version', 'singularity --version'),
+        ('docker exe', 'which docker'),
+        ('docker version', 'docker --version'),
+        ('OS packages, older redhat', 'yum list'),
+        ('OS packages, modern redhat', 'dnf list installed'),
+        ('OS packages, debian/ubuntu', 'apt list --installed'),
+        ('OS packages, ubuntu snap', 'snap list'),
+        ('OS packages, arch', 'pacman -Q'),
+        ('OS packages, flatpack', 'flatpack list --app'),
+        ('OS packages, MacOS', 'pkgutil --pkgs'),
+    ]
+    for name, cmd in shell_stuff:
+        print(name+':\n')
+        try:
+            proc = subprocess.run(
+                shlex.split(cmd),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding='utf8',
+            )
+            print(proc.stdout)
+        except FileNotFoundError:
+            pass
+        print('')
+
+
 # XXX stolen from paramsurvey.psmultiprocessing
 def _core_count():
     try:
@@ -122,10 +170,6 @@ def create_magic_file():
         address = hostname+':'+str(port)
         print(address, password, file=fd)
 
-    # debug
-    print('GREG os.path.isfile', os.path.isfile(magic))
-    with open(magic) as f:
-        print('GREG content', f.read())
     return port, password
 
 
@@ -216,7 +260,7 @@ def starter(cmd, check_network=True):
 
     parts = shlex.split(cmdline)
     if verbose:
-        print('GREG parts is', parts)
+        print('Starter command:', parts)
     # try/catch for FileNotFound ?
     proc = subprocess.run(parts)  # XXX this is the hang in integration test -- ray start head
     proc_complain(proc, 'ray process')
@@ -227,7 +271,7 @@ def starter(cmd, check_network=True):
 
     parts = shlex.split(cmdline2)
     if verbose:
-        print(parts)
+        print('Starter command2:', parts)
     # try/catch for FileNotFound ?
     proc = subprocess.run(parts)
     proc_complain(proc, 'driver process')
@@ -260,6 +304,8 @@ def submitter(cmd, check_network=True):
     cmdline = cmdbase + ' -- python ' + ' '.join(cmd.words)
 
     parts = shlex.split(cmdline)
+    if verbose:
+        print('Submitter command', parts)
     try:
         proc = subprocess.run(parts)
     except FileNotFoundError:
@@ -274,7 +320,9 @@ def submitter(cmd, check_network=True):
         if cmd.no_wait:
             print('List of running jobs:')
             cmdline = cmdbase + 'list'
-            subprocess.run(cmdline.split())
+            parts = shlex.split(cmdline)
+            print('Submitter command2:', parts)
+            subprocess.run(parts)
             print('Job is hopefully running. Use these commands to interact with it:')
             for verb in ('list', 'logs', 'status', 'stop'):
                 print(' ', cmdbase, verb)
@@ -294,6 +342,8 @@ def builder(cmd, check_network=False):
 
     cmdline = 'singularity build {} docker-archive://{}'.format(sandbox, cmd.file)
     parts = shlex.split(cmdline)
+    if verbose:
+        print('Builder command:', parts)
     try:
         proc = subprocess.run(parts)
     except FileNotFoundError:
@@ -328,6 +378,9 @@ def main(args=None, check_network=False):
     build.add_argument('file', help='docker export tar')
     build.add_argument('--sandbox', action='store', help='writable directory inside the container')
     build.set_defaults(func=builder)
+
+    debug = subparsers.add_parser('debug', help='print a ton of version information useful for debugging')
+    debug.set_defaults(func=print_environment)
 
     cmd = parser.parse_args(args=args)
     cmd.func(cmd, check_network=check_network)

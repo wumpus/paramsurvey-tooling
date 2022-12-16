@@ -53,6 +53,17 @@ installed, and do:
 pstool build my_docker_image.tar.gz
 ```
 
+## If you find a bug
+
+This tool attempts to support many systems that the author can not
+directly test. If you find a bug in your environment, run this:
+
+```
+pstool debug > DEBUG
+```
+
+and attach this file `DEBUG` to your bug report.
+
 ## Documentation
 
 Installing code in an environment:
