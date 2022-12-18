@@ -59,6 +59,7 @@ def print_environment(cmd, **kwargs):
         ('hostname -I', 'hostname -I'),
         ('/etc/hosts', 'cat /etc/hosts'),
         ('/etc/issue', 'cat /etc/issue'),
+        ('/etc/os-release', 'cat /etc/os-release'),  # ubuntu
         ('singularity exe', 'which singularity'),
         ('singularity version', 'singularity --version'),
         ('docker exe', 'which docker'),
