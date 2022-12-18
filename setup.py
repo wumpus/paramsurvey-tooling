@@ -28,6 +28,8 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='paramsurvey_tooling',
     description='A toolkit to make paramsurvey easy to use on clusters and cloud',
+    #use_scm_version=True,
+    version='v0.3.6',
     long_description=description,
     long_description_content_type='text/markdown',
     author='Greg Lindahl and others',
