@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+from __future__ import print_function
 
 from os import path
+import sys
 
 from setuptools import setup
 
@@ -21,6 +22,17 @@ extras_require = {
     'package': package_requirements,
 }
 
+# if somehow we are running under python 2, which shouldn't happen,
+# print a useful diagnostic instead of crashing on open(encoding=)
+
+if sys.version_info[0] < 3:
+    print('Somehow we are running under Python 2, which is not supported.')
+    print('Python sys.implementation:\n')
+    print(sys.implementation)
+    print('Python sys.executable:\n')
+    print(sys.executable)
+    exit(1)
+
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     description = f.read()
@@ -28,8 +40,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='paramsurvey_tooling',
     description='A toolkit to make paramsurvey easy to use on clusters and cloud',
-    #use_scm_version=True,
-    version='v0.3.6',
+    use_scm_version=True,
     long_description=description,
     long_description_content_type='text/markdown',
     author='Greg Lindahl and others',

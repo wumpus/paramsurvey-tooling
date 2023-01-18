@@ -4,3 +4,4 @@ paramsurvey_tooling.egg-info/
 __pycache__
 .coverage
 dist/
+debug-outputs/

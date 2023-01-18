@@ -30,9 +30,19 @@ Univa Grid Engine appears to still use SGE_ as the prefix
 MAGIC_TIMEOUT_SEC = 300
 
 
+def print_environment_setuptools():
+    try:
+        import setuptools
+        print(' ', 'setuptools', setuptools.__version__)
+        import setuptools_scm
+        print(' ', 'setuptools_scm', setuptools_scm.__version__)
+    except Exception as e:
+        # we expect setuptools_scm to be rare, so whatever
+        pass
+
 def print_environment(cmd, **kwargs):
     '''Print environmental information useful for filing bug reports'''
-    print('Shell environment:\n')
+    print('\nShell environment:\n')
     print('\n'.join('{}={}'.format(k, v) for k, v in os.environ.items()))
     print('')
     print('Python sys.implementation:\n')
@@ -40,6 +50,9 @@ def print_environment(cmd, **kwargs):
     print('')
     print('Python sys.executable:\n')
     print(sys.executable)
+    print('')
+    print('Python sys.path:\n')
+    print(sys.path)
     print('')
     print('Python socket.gethostname:\n')
     print(socket.gethostname())
@@ -50,6 +63,7 @@ def print_environment(cmd, **kwargs):
         v = sys.modules[k]
         ver = getattr(v, '__version__', None) or getattr(v, 'version', 'unknown')
         print(' ', k, ver)
+    print_environment_setuptools()
     print('')
 
     shell_stuff = [
@@ -72,6 +86,7 @@ def print_environment(cmd, **kwargs):
         ('OS packages, flatpack', 'flatpack list --app'),
         ('OS packages, MacOS', 'pkgutil --pkgs'),
         ('HPC Module', 'module list'),
+        ('HPC Module', 'module avail'),
         ('Conda packages', 'conda list -q'),
         ('pip freeze', 'pip freeze'),
     ]
