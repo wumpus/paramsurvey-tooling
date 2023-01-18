@@ -89,6 +89,8 @@ def print_environment(cmd, **kwargs):
         ('HPC Module', 'module avail'),
         ('Conda packages', 'conda list -q'),
         ('pip freeze', 'pip freeze'),
+        ('nvidia-smi', 'nvidia-smi'),
+        ('rocm-smi', 'rocm-smi'),
     ]
     for name, cmd in shell_stuff:
         print(name+':\n')
