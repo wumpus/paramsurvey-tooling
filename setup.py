@@ -27,8 +27,6 @@ extras_require = {
 
 if sys.version_info[0] < 3:
     print('Somehow we are running under Python 2, which is not supported.')
-    print('Python sys.implementation:\n')
-    print(sys.implementation)
     print('Python sys.executable:\n')
     print(sys.executable)
     exit(1)
